@@ -60,6 +60,7 @@ void *thr_tx_f(void *arg) {
       printf("cnt: %02d ", count);
       print_packet(pkt->message);
       write(fd, pkt->message, sizeof(struct ft8900r_head_msg));
+      tcdrain(fd);
       free(pkt);
       free(pkt->message);
       pkt = NULL;

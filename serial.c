@@ -40,7 +40,7 @@ int init_tty(char *dev) {
   tty.c_lflag = 0;
   tty.c_oflag = 0;
 
-  tty.c_cc[VMIN] = 1; // non blocking
+  tty.c_cc[VMIN] = 13; // non blocking
   tty.c_cc[VTIME] = 5; // 0.5s timeout
 
   if (tcsetattr(fd, TCSANOW, &tty) != 0) {
@@ -56,14 +56,13 @@ struct ft8900r_head_msg * read_packet(int fd) {
   memset(&buf, '\0', sizeof(buf));
   int n = read(fd, &buf, sizeof(buf));
   if(n == 0) {
-    if(errno = EAGAIN) {
+    if(errno == EAGAIN) {
       return NULL;
     }
     perror("read");
     exit(1);
   }
 
-  printf("%d\n", n);
   if(n < 13) {
     return NULL;
   }

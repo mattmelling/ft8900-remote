@@ -20,7 +20,7 @@ void print_packet(struct ft8900r_head_msg *pkt) {
 }
 
 int find_packet(uint8_t *buf, size_t len) {
-  for(int i = 0; i < (len - sizeof(struct ft8900r_head_msg)); i++) {
+  for(int i = 0; i < len; i++) {
     if(buf[i] & 0x80) {
       return i;
     }
