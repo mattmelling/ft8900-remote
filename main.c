@@ -1,79 +1,65 @@
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <string.h>
 #include <errno.h>
-
 #include <pthread.h>
 #include <sys/queue.h>
+#include <unistd.h>
+#include <termios.h>
 
 #include "serial.h"
 #include "packet.h"
+#include "socket.h"
+#include "packet_queue.h"
+#include "keypad.h"
+#include "command.h"
 
 int fd;
-
-TAILQ_HEAD(msgqueue, ft8900r_head_msg_entry);
-struct msgqueue msgq;
+int sock;
 
 pthread_t thr_rx;
 pthread_t thr_tx;
-pthread_mutex_t lock;
+pthread_t thr_sock;
 
-int count = 0;
-
-
-struct ft8900r_head_msg_entry {
-  TAILQ_ENTRY(ft8900r_head_msg_entry) tailq;
-  struct ft8900r_head_msg *message;
-};
-
+// Serial reader thread
 void *thr_rx_f(void *arg) {
-  struct ft8900r_head_msg *pkt;
-  struct ft8900r_head_msg_entry *entry;
-  
+  struct ft8900r_head_packet pkt;
   while(1) {
-    pkt = read_packet(fd);
-    if(pkt != NULL) {
-
-      entry = malloc(sizeof(struct ft8900r_head_msg_entry));
-      entry->message = pkt;
-
-      pthread_mutex_lock(&lock);
-      TAILQ_INSERT_TAIL(&msgq, entry, tailq);
-      count++;
-      pthread_mutex_unlock(&lock);
+    if(packet_read(fd, &pkt)) {
+      packet_queue_append(&pkt);
     }
   }
 }
 
+// Serial writer thread
 void *thr_tx_f(void *arg) {
-  struct ft8900r_head_msg_entry *pkt = NULL;
+  struct ft8900r_head_packet pkt;
   while(1) {
-    pthread_mutex_lock(&lock);
-    if(!TAILQ_EMPTY(&msgq)) {
-      pkt = TAILQ_FIRST(&msgq);
-      TAILQ_REMOVE(&msgq, pkt, tailq);
-      count--;
-    }
-    pthread_mutex_unlock(&lock);
-
-    if(pkt != NULL) {
-      printf("cnt: %02d ", count);
-      print_packet(pkt->message);
-      write(fd, pkt->message, sizeof(struct ft8900r_head_msg));
+    if(packet_queue_pop(&pkt)) { 
+      write(fd, &pkt, sizeof(struct ft8900r_head_packet));
       tcdrain(fd);
-      free(pkt);
-      free(pkt->message);
-      pkt = NULL;
     }
   }
+}
+
+// Socket thread
+void *thr_sock_f(void *arg) {
+  char buf[32];
+  size_t n = 0;
+
+  while(1) {
+    memset(&buf, '\0', sizeof(buf));
+    n = socket_read(sock, (char *)&buf, sizeof(buf));
+    if(n > 0) {
+      command_process((char *)&buf);
+    }
+  }  
 }
 
 int main(int argc, char **argv) {
   fd = init_tty("/dev/ttyUSB0");
-  
-  TAILQ_INIT(&msgq);
-
-  pthread_mutex_init(&lock, NULL);
+  sock = socket_init();  
+  packet_queue_init();
 
   if(pthread_create(&thr_rx, NULL, thr_rx_f, NULL)) {
     perror("pthread_create rx");
@@ -82,6 +68,11 @@ int main(int argc, char **argv) {
 
   if(pthread_create(&thr_tx, NULL, thr_tx_f, NULL)) {
     perror("pthread_create tx");
+    exit(1);
+  }
+
+  if(pthread_create(&thr_sock, NULL, thr_sock_f, NULL)) {
+    perror("pthread_create socket");
     exit(1);
   }
 

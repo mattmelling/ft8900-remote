@@ -1,21 +1,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <string.h>
-
-
 #include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <sys/types.h>
+
+#include "socket.h"
 
 #define ADDR "127.0.0.1"
 #define PORT 1234
-
-
-// set up udp socket as unblocking
-// listen and loop checking for chars received
-
 
 struct sockaddr_in addo;
 
@@ -23,7 +17,7 @@ struct sockaddr_in addo;
 /*
  * Create socket and bid to ADDR:PORT
  */
-int create_socket() {
+int socket_init() {
 
   struct sockaddr_in addr;
   int sock, flags;
@@ -56,45 +50,15 @@ int create_socket() {
   return sock;
 }
 
-int main(int argc, char **argv) {
-
-  memset(&addo, '\0', sizeof(addo));
-
-  
-
+size_t socket_read(int sock, char *buf, size_t n) {
   int slen = sizeof(addo);
-  
-  char buf[32];
-  socklen_t addr_size;
-
-  int sock = create_socket();
-
-  int r = 0;
-
-  while(1) {
-    r = recvfrom(sock, buf, 32, 0, (struct sockaddr *)&addo, &slen);
-    if (r == -1 && errno != EAGAIN) {
-      perror("could not recv from socket");
-      exit(1);
-    }
-    if (r > 0) {
-      printf("%s\n", buf);
-    }
+  int r = recvfrom(sock, buf, n, 0, (struct sockaddr *)&addo, &slen);
+  if(r == -1 && errno != EAGAIN) {
+    perror("recvfrom");
+    exit(1);
   }
-  
-  
-  /* memset(&addr, '\0', sizeof(si_me)); */
-  /* addr.sin_family = AF_INET; */
-  /* addr.sin_port = htons(PORT); */
-  /* addr.sin_addr.s_addr = inet_addr("127.0.0.1"); */
-
-  /* fcntl(sockfd, F_SETFL, flags | O_NONBLOCK); */
-  
-  /* bind(sockfd, (struct sockaddr*)&addr, sizeof(si_me)); */
-  /* addr_size = sizeof(addo); */
-
-  /* recvfrom(sockfd, buf, 32, 0, (struct sockaddr*)&addo, &addr_size); */
-  /* printf("DATA: %s\n"); */
-
+  if(r > 0) {
+    return r;
+  }
   return 0;
 }

@@ -50,34 +50,3 @@ int init_tty(char *dev) {
 
   return fd;
 }
-
-struct ft8900r_head_msg * read_packet(int fd) {
-  uint8_t buf[13];
-  memset(&buf, '\0', sizeof(buf));
-  int n = read(fd, &buf, sizeof(buf));
-  if(n == 0) {
-    if(errno == EAGAIN) {
-      return NULL;
-    }
-    perror("read");
-    exit(1);
-  }
-
-  if(n < 13) {
-    return NULL;
-  }
-
-  int offset = find_packet((void *)&buf, n);
-  if(offset < 0) {
-    return NULL;
-  }
-
-  int t = sizeof(buf) - offset;
-  if(t < sizeof(struct ft8900r_head_msg)) {
-    return NULL;
-  }
-
-  struct ft8900r_head_msg *pkt = malloc(sizeof(struct ft8900r_head_msg));
-  memcpy(pkt, &buf + offset, sizeof(pkt));
-  return pkt;
-}
