@@ -1,0 +1,10 @@
+# systemctl edit ft8900r-remote.service to edit:
+# Environment=FT8900R_PORT
+# Environment=FT8900R_DEVICE
+
+[Service]
+ExecStart=/usr/local/bin/ft8900r
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
