@@ -17,10 +17,6 @@
 int fd;
 int sock;
 
-pthread_t thr_rx;
-pthread_t thr_tx;
-pthread_t thr_sock;
-
 // Serial reader thread
 void *thr_rx_f(void *arg) {
   struct ft8900r_head_packet pkt;
@@ -28,6 +24,7 @@ void *thr_rx_f(void *arg) {
     if(packet_read(fd, &pkt)) {
       packet_queue_append(&pkt);
     }
+    usleep(1);
   }
 }
 
@@ -37,8 +34,8 @@ void *thr_tx_f(void *arg) {
   while(1) {
     if(packet_queue_pop(&pkt)) { 
       write(fd, &pkt, sizeof(struct ft8900r_head_packet));
-      tcdrain(fd);
     }
+    usleep(1);
   }
 }
 
@@ -53,6 +50,7 @@ void *thr_sock_f(void *arg) {
     if(n > 0) {
       command_process((char *)&buf);
     }
+    usleep(1000 * 10);
   }
 }
 
@@ -67,16 +65,19 @@ int main(int argc, char **argv) {
   sock = socket_init(port);
   packet_queue_init();
 
+  pthread_t thr_rx;
   if(pthread_create(&thr_rx, NULL, thr_rx_f, NULL)) {
     perror("pthread_create rx");
     exit(1);
   }
 
+  pthread_t thr_tx;
   if(pthread_create(&thr_tx, NULL, thr_tx_f, NULL)) {
     perror("pthread_create tx");
     exit(1);
   }
 
+  pthread_t thr_sock;
   if(pthread_create(&thr_sock, NULL, thr_sock_f, NULL)) {
     perror("pthread_create socket");
     exit(1);

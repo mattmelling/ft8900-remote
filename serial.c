@@ -7,11 +7,7 @@
 #include <string.h>
 #include <termios.h>
 
-
 #include "packet.h"
-
-
-
 
 int init_tty(char *dev) {
   int fd = open(dev, O_RDWR | O_NOCTTY | O_SYNC);
