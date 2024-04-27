@@ -5,6 +5,12 @@
 #include "packet_queue.h"
 #include "keypad.h"
 
+#define packet_inject(pkt) {\
+    for(int i = 0; i < 10; i++) {\
+      packet_queue_append(pkt);\
+    }\
+}
+
 void command_process_keypad(char *cmd) {
   struct ft8900r_keypad_button btn;
   struct ft8900r_head_packet pkt;
@@ -46,13 +52,20 @@ void command_process_keypad(char *cmd) {
   // Key down
   packet_init(&pkt);
   packet_set_keypad(&pkt, &btn);
-  for(int i = 0; i < 10; i++) {
-    packet_queue_append(&pkt);
-  }
+  packet_inject(&pkt);
 
   // Key up
   packet_init(&pkt);
   packet_queue_append(&pkt);
+}
+
+void command_process_hyper(char *cmd) {
+  long hyper = strtol(cmd, NULL, 10);
+  struct ft8900r_head_packet pkt;
+
+  packet_init(&pkt);
+  pkt.hyp = hyper;
+  packet_inject(&pkt);
 }
 
 void command_process(char *cmd) {
@@ -63,6 +76,10 @@ void command_process(char *cmd) {
       command_process_keypad(cmd++);
       usleep(1000 * 500);
     }
+    break;
+  case 'h':
+    command_process_hyper(++cmd);
+    break;
   default:
     break;
   }
