@@ -8,23 +8,19 @@
 
 #include "socket.h"
 
-#define ADDR "127.0.0.1"
-#define PORT 1234
-
 struct sockaddr_in addo;
-
 
 /*
  * Create socket and bid to ADDR:PORT
  */
-int socket_init() {
+int socket_init(long port) {
 
   struct sockaddr_in addr;
   int sock, flags;
 
   memset(&addr, '\0', sizeof(addr));
   addr.sin_family = AF_INET;
-  addr.sin_port = htons(PORT);
+  addr.sin_port = htons(port);
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {

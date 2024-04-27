@@ -53,12 +53,18 @@ void *thr_sock_f(void *arg) {
     if(n > 0) {
       command_process((char *)&buf);
     }
-  }  
+  }
 }
 
 int main(int argc, char **argv) {
-  fd = init_tty("/dev/ttyUSB0");
-  sock = socket_init();  
+
+  char *dev = getenv("FT8900R_DEVICE");
+  fd = init_tty(dev);
+
+  char *ports = getenv("FT8900R_PORT");
+  long port = strtol(ports, NULL, 10);
+
+  sock = socket_init(port);
   packet_queue_init();
 
   if(pthread_create(&thr_rx, NULL, thr_rx_f, NULL)) {
