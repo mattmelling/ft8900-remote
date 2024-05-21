@@ -1,0 +1,44 @@
+Remote control for Yaesu FT8900 Quad Band Mobile Radio.
+
+Unfortunately this rig does not come with a CAT interface, but was the only thing had availble when building [[https://ukrepeater.net/my_repeater.php?id=5456][MB7IVR]], a dual band (10m and 6m) simplex gateway. However it does have a detachable head unit. The head unit sends regular bursts of bits to the body, representing keys that have been pressed. This program intercepts these bursts from the head, injects new keypresses, and transmits them to the radio body, enabling remote control.
+
+The program listens for UDP commands, which allowed us to remotely control the radio from a web interface.
+
+[[./img/setup.jpg]]
+
+** Prior Work
+
+I got a little way figuring out the hardware part of this before discovering that [[https://github.com/cob16/rt8900_serial_control][Cormac]] had built something similar based on work by another amateur, the latter of which has sadly disappeared from the internet. Cormac's version works well, however I wanted to preserve the ability to use the radio as normal (i.e. reading existing keypresses), which Cormac's version did not do, as well as add networking features.
+
+Details about the packets flying about between the head and the body are detailed [[https://zeduza.blogspot.com/2013/02/ft-8800r-tech-documentation-interlock.html][on this blog post]] of unknown provenance.
+
+** Hardware
+Removing the front panel of the radio revealed a short patch lead between the body and head, with RJ12 connectors. Pins 1 and 2 are the RX and TX lines with respect to the radio body. A cable was constructed to route the RX (TX from head) pin on the head side to the serial RX pin on a Raspberry Pi Model 3b. The TX pin from the Pi was then connected to the RX (TX from head) of the cable on the body side, such that the Pi is able to receive data from the head and pipe it back in to the body on the RX (TX from head) line.
+
+All other pins should be connected so that the radio can continue to operate normally.
+
+The Pi uses 3.3v logic, so a voltage divider was added to shift the level down (2.2k and 3.3k resistors). Fortunately the radio is fine with a 3.3v '1' so no shifting was required from the Pi's TX.
+
+[[./img/pinout.png]]
+
+** Installation
+~sudo make install~ will build and install the program as well as add a systemd unit file. ~sudo systemctl edit ft8900r-remote.service~ can be used to add the following environment variables:
+
+#+BEGIN_SRC
+[Service]
+Environment=FT8900R_PORT=7373
+Environment=FT8900R_DEVICE="/dev/ttyACM0"
+#+END_SRC
+
+Note that if running on a Raspberry Pi, the onboard serial device will need to be enabled (do not also enable console on this device).
+
+** Usage
+Start the program, then turn on the radio. If everything is connected up properly, then the radio will operate as normal. On startup the program opens the serial port ~$FT8900R_PORT~, reading commands from the head and sending them to the body.
+
+The program will also listen for commands on UDP port ~$FT8900R_PORT~.
+
+The command ~kN~ will send the DTMF keypad digit ~N~, e.g. ~k1~ or ~k1k4k5k5k0k0~ to enter the 2m calling frequency.
+
+The command ~hN~ will load hyper-memory ~N~, e.g. ~h2~.
+
+For MB7IVR, we found that entering frequencies was a little slow, and eventually settled on switching between hyper-memories to go between the 10m and 6m frequencies we had an NoV for. As the program can read or generate any valid head packet, it could be extended to add commands for any other head unit or DTMF mic keypresses.
