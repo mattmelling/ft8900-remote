@@ -25,7 +25,7 @@ void packet_print(struct ft8900r_head_packet *pkt);
 // Look for packet in buf and return offset
 int packet_find(uint8_t *buf, size_t len);
 
-// Read a packet in to pkt and return 1 or return 0 if no packet read 
+// Read a packet in to pkt and return 1 or return 0 if no packet read
 int packet_read(int fd, struct ft8900r_head_packet *pkt);
 
 void packet_init(struct ft8900r_head_packet *pkt);

@@ -32,7 +32,7 @@ void *thr_rx_f(void *arg) {
 void *thr_tx_f(void *arg) {
   struct ft8900r_head_packet pkt;
   while(1) {
-    if(packet_queue_pop(&pkt)) { 
+    if(packet_queue_pop(&pkt)) {
       write(fd, &pkt, sizeof(struct ft8900r_head_packet));
     }
     usleep(1);
