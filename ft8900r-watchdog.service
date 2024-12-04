@@ -1,0 +1,6 @@
+[Service]
+ExecStart=/usr/local/bin/ft8900r-watchdog
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

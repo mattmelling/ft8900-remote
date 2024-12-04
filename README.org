@@ -42,3 +42,12 @@ The command ~kN~ will send the DTMF keypad digit ~N~, e.g. ~k1~ or ~k1k4k5k5k0k0
 The command ~hN~ will load hyper-memory ~N~, e.g. ~h2~.
 
 For MB7IVR, we found that entering frequencies was a little slow, and eventually settled on switching between hyper-memories to go between the 10m and 6m frequencies we had an NoV for. As the program can read or generate any valid head packet, it could be extended to add commands for any other head unit or DTMF mic keypresses.
+
+** Watchdog
+After some time in the field we observed that the radio would turn of intermittently. Extensive testing to find memory leaks and bugs was conducted with no conclusive results. The working theory is that the process scheduling on the Pi would sometimes disrupt the main TX/RX loop just enough to cause the radio to shut down.
+
+To get around this, the service was modified to maintain a marker at ~/tmp/ft8900r-watchdog~. Another service nameed ~ft8900r-watchdog~ was added to monitor this file and restart the radio if it is not updated for a period of > 1s.
+
+The radio interface includes a POWER SW pin, which when brought low momentarily, will toggle the power state of the radio. This was connected to GPIO pin 18 on the Pi. The watchdog service will monitor ~/tmp/ft8900r-watchdog~ bring GPIO 18 low to restart the radio, restoring it to high state after 500ms.
+
+The watchdog service can be installed with ~make install-watchdog~.

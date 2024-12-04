@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+while true
+do
+    sleep 1
+    wd_mod=$(date -r /run/ft8900r_watchdog +%s)
+    ts_curr=$(date +%s)
+    d=$(($ts_curr - $wd_mod))
+
+    if [ "$d" -gt "1" ]; then
+        echo "Restarting FT8900r"
+        pinctrl set 18 op pn dh
+        sleep 0.1
+        pinctrl set 18 op pn dl
+        sleep 0.5
+        pinctrl set 18 op pn dh
+        sleep 2
+    fi
+done

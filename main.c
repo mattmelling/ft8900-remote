@@ -20,9 +20,12 @@ int sock;
 // Serial reader thread
 void *thr_rx_f(void *arg) {
   struct ft8900r_head_packet pkt;
+  FILE *wd_marker;
+  int n = 0;
   while(1) {
     if(packet_read(fd, &pkt)) {
       packet_queue_append(&pkt);
+      watchdog_update();
     }
     usleep(1);
   }
